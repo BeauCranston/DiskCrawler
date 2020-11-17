@@ -2,6 +2,7 @@
 import java.io.File;
 import java.io.FileFilter;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * ProducerConsumer
@@ -15,7 +16,8 @@ public class ProducerConsumer {
         private final BlockingQueue<File> fileQueue;
         private final FileFilter fileFilter;
         private final File root;
-
+        private static final Object lock = new Object();
+        //producer
         public FileCrawler(BlockingQueue<File> fileQueue,
                            final FileFilter fileFilter,
                            File root) {
@@ -34,7 +36,20 @@ public class ProducerConsumer {
 
         public void run() {
             try {
-                crawl(root);
+                while(true){
+                    synchronized (this){
+                        if(fileQueue.size() == BOUND){
+                            wait();
+                        }
+
+                        notify();
+                        crawl(root);
+
+
+                    }
+
+
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -52,17 +67,43 @@ public class ProducerConsumer {
         }
     }
 
-    static class Indexer implements Runnable {
+    //consumer
+    public static class Indexer implements Runnable {
         private final BlockingQueue<File> queue;
+        private static volatile int counter;
+        private static final Object lock = new Object();
+        private int id;
+        private static int currentTurn = 0;
 
         public Indexer(BlockingQueue<File> queue) {
             this.queue = queue;
+            this.id = id;
+        }
+        public Indexer(BlockingQueue<File> queue, int id) {
+            this.queue = queue;
+            this.id = id;
         }
 
         public void run() {
             try {
-                while (true)
-                    indexFile(queue.take());
+                while (true){
+                    synchronized (lock){
+                        File file = queue.peek();
+                        if(file == null){
+                            lock.wait();
+                        }
+                        else{
+                            lock.notify();
+                            indexFile(queue.take());
+                        }
+
+
+
+                    }
+
+
+                }
+
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -70,7 +111,11 @@ public class ProducerConsumer {
 
         public void indexFile(File file) {
             // Index the file...
+            System.out.println(file.getPath());
+            System.out.println(counter);
+            counter++;
         };
+
     }
 
     private static final int BOUND = 10;
@@ -88,6 +133,12 @@ public class ProducerConsumer {
             new Thread(new FileCrawler(queue, filter, root)).start();
 
         for (int i = 0; i < N_CONSUMERS; i++)
-            new Thread(new Indexer(queue)).start();
+            new Thread(new Indexer(queue, i)).start();
+    }
+
+    public static void main(String[] args) {
+        ;
+        File[] directories = new File("C:\\Users\\Beau\\Desktop\\test10183").listFiles();
+        startIndexing(directories);
     }
 }
