@@ -137,7 +137,7 @@ public class ProducerConsumer {
     }
 
     public static void main(String[] args) {
-        ;
+
         File[] directories = new File("C:\\Users\\Beau\\Desktop\\test10183").listFiles();
         startIndexing(directories);
     }
