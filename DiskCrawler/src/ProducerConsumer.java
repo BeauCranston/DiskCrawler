@@ -12,12 +12,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Brian Goetz and Tim Peierls
  */
 public class ProducerConsumer {
+    /**
+     * a static volitile boolean that determines if the program is finished crawling. It us volitile so that all ofthe consumer threads know right away that theres
+     * nothing left to consume and therefore terminate
+      */
+    private static volatile boolean done = false;
+    //a static volitile counter so that the counter can increment correctly despite multiple threads writing to it
+    private static volatile int counter = 0;
+    private static boolean debug = false;
     static class FileCrawler implements Runnable {
         private final BlockingQueue<File> fileQueue;
         private final FileFilter fileFilter;
         private final File root;
-        private static final Object lock = new Object();
-        //producer
+
         public FileCrawler(BlockingQueue<File> fileQueue,
                            final FileFilter fileFilter,
                            File root) {
@@ -29,33 +36,29 @@ public class ProducerConsumer {
                 }
             };
         }
-
+    //checks if the file has already been indexed
         private boolean alreadyIndexed(File f) {
             return false;
         }
 
         public void run() {
             try {
-                while(true){
-                    synchronized (this){
-                        if(fileQueue.size() == BOUND){
-                            wait();
-                        }
-
-                        notify();
-                        crawl(root);
-
-
-                    }
-
-
-                }
+                //crawl now returns true when it is done, when the crawling is done, the done boolean should be true to notify the consumers that they can terminate
+                done = crawl(root);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+
         }
 
-        private void crawl(File root) throws InterruptedException {
+        /**
+         * a recursive method to crawl through all of the files. It will take the file if it passes the filter check, and the file has already been indexed.
+         * The crawl file returns true when the recursive call is done AKA the crawler has finished finding the files.
+         * @param root
+         * @return
+         * @throws InterruptedException
+         */
+        private boolean crawl(File root) throws InterruptedException {
             File[] entries = root.listFiles(fileFilter);
             if (entries != null) {
                 for (File entry : entries)
@@ -63,55 +66,60 @@ public class ProducerConsumer {
                         crawl(entry);
                     else if (!alreadyIndexed(entry))
                         fileQueue.put(entry);
+
             }
+            return true;
         }
     }
 
-    //consumer
-    public static class Indexer implements Runnable {
+    static class Indexer implements Runnable {
         private final BlockingQueue<File> queue;
-        private static volatile int counter;
+        //static final object so that all consumer threads have visibility of the lock and the lock cannot be modified
         private static final Object lock = new Object();
-        private int id;
-        private static int currentTurn = 0;
-
         public Indexer(BlockingQueue<File> queue) {
             this.queue = queue;
-            this.id = id;
-        }
-        public Indexer(BlockingQueue<File> queue, int id) {
-            this.queue = queue;
-            this.id = id;
         }
 
         public void run() {
             try {
-                while (true){
+                //only loop while the disk crawler has not finished crawling
+                while (!done){
+                    //synchronize on the static final lcok object so that multuple consumers are not trying to access the queue at the same time;
                     synchronized (lock){
-                        File file = queue.peek();
-                        if(file == null){
-                            lock.wait();
-                        }
-                        else{
-                            lock.notify();
+                        //if the crawler has not finished, take the top item in the queue
+                        if(!done){
+                            if(debug == true){
+                                System.out.println("Take");
+                            }
                             indexFile(queue.take());
                         }
-
-
-
                     }
-
-
+                }
+                if(debug == true){
+                    System.out.println("Terminating");
                 }
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+            //check if the thread is alive after execution, will return true but this is because it is just about to die off. Kind of useless code here.
+            finally {
+                if(debug == true){
+                    System.out.println(Thread.currentThread().isAlive());
+                }
+
+            }
         }
 
+        /**
+         * prints the file path and the value of the counter and then increments the static volatile counter
+         *
+         */
         public void indexFile(File file) {
             // Index the file...
+            //see the file that is being indexed
             System.out.println(file.getPath());
+            //print the value of the counter
             System.out.println(counter);
             counter++;
         };
@@ -128,17 +136,24 @@ public class ProducerConsumer {
                 return true;
             }
         };
-
         for (File root : roots)
             new Thread(new FileCrawler(queue, filter, root)).start();
 
         for (int i = 0; i < N_CONSUMERS; i++)
-            new Thread(new Indexer(queue, i)).start();
+            new Thread(new Indexer(queue)).start();
+
+
     }
 
     public static void main(String[] args) {
 
-        File[] directories = new File("C:\\Users\\Beau\\Desktop\\test10183").listFiles();
+        File[] directories = {new File("C:\\Users\\Beau\\Desktop\\test10183")};
         startIndexing(directories);
+        //hold this thread up until the program finishes
+        while(!done){
+
+        }
+        System.out.println("There are " + counter + " files in this directory!");
+
     }
 }
