@@ -1,6 +1,7 @@
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.HashMap;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,6 +21,7 @@ public class ProducerConsumer {
     //a static volitile counter so that the counter can increment correctly despite multiple threads writing to it
     private static volatile int counter = 0;
     private static boolean debug = false;
+
     static class FileCrawler implements Runnable {
         private final BlockingQueue<File> fileQueue;
         private final FileFilter fileFilter;
