@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p/>
  * Producer and consumer tasks in a desktop search application
  *
- * @author Brian Goetz and Tim Peierls
+ * @author Brian Goetz and Tim Peierls @betterAuthor Beau Cranston 000397019
  */
 public class ProducerConsumer {
     /**
@@ -20,8 +20,9 @@ public class ProducerConsumer {
     private static volatile boolean done = false;
     //a static volitile counter so that the counter can increment correctly despite multiple threads writing to it
     private static volatile int counter = 0;
+    //A DEBUG TOGGLER NICE! You taught me this and i think it's a smart way of keeping things clean instead of commenting out outputs, so thank you
     private static boolean debug = false;
-
+    private static ConcurrentHashMap<String, File> filesFound = new ConcurrentHashMap<>();
     static class FileCrawler implements Runnable {
         private final BlockingQueue<File> fileQueue;
         private final FileFilter fileFilter;
@@ -40,7 +41,13 @@ public class ProducerConsumer {
         }
     //checks if the file has already been indexed
         private boolean alreadyIndexed(File f) {
-            return false;
+            if(filesFound.containsKey(f.getAbsolutePath())){
+                return true;
+            }
+            else{
+                return false;
+            }
+
         }
 
         public void run() {
@@ -66,8 +73,16 @@ public class ProducerConsumer {
                 for (File entry : entries)
                     if (entry.isDirectory())
                         crawl(entry);
-                    else if (!alreadyIndexed(entry))
+                    else if (!alreadyIndexed(entry)){
+                        //add file to hashmap
+                        if(debug == true){
+                            System.out.println(entry.getAbsolutePath());
+                        }
+
+                        filesFound.put(entry.getName(), entry);
                         fileQueue.put(entry);
+                    }
+
 
             }
             return true;
