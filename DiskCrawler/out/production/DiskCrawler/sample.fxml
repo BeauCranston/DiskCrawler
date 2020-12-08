@@ -29,9 +29,9 @@
             <Font name="Dubai Light" size="20.0" />
          </font>
       </Label>
-      <TextField fx:id="directoryInput" layoutX="422.0" layoutY="179.0" prefHeight="40.0" prefWidth="227.0" promptText="C:\..." style="-fx-padding: 12px;" AnchorPane.leftAnchor="422.0" AnchorPane.rightAnchor="147.0" />
-      <TextField fx:id="targetFile" layoutX="422.0" layoutY="255.0" prefHeight="40.0" prefWidth="227.0" promptText="example.txt" style="-fx-padding: 12px;" />
-      <Button fx:id="searchBtn" layoutX="303.0" layoutY="360.0" mnemonicParsing="false" prefHeight="54.0" prefWidth="183.0" style="-fx-padding: 15px; -fx-font-size: 1.5em; -fx-background-color: #05a4e3; -fx-text-fill: #F2F2F2;" text="Search" />
+      <TextField fx:id="directoryInput" layoutX="422.0" layoutY="179.0" prefHeight="40.0" prefWidth="227.0" promptText="C:\..." style="-fx-padding: 12px;" text="C:\Users\Beau\Desktop\test10183" AnchorPane.leftAnchor="422.0" AnchorPane.rightAnchor="147.0" />
+      <TextField fx:id="targetFile" layoutX="422.0" layoutY="255.0" prefHeight="40.0" prefWidth="227.0" promptText="example.txt" style="-fx-padding: 12px;" text="Hamilton.txt" />
+      <Button fx:id="searchBtn" layoutX="303.0" layoutY="360.0" mnemonicParsing="false" onMouseClicked="#search" prefHeight="54.0" prefWidth="183.0" style="-fx-padding: 15px; -fx-font-size: 1.5em; -fx-background-color: #05a4e3; -fx-text-fill: #F2F2F2;" text="Search" />
       <TextArea fx:id="pathList" layoutX="78.0" layoutY="512.0" prefHeight="249.0" prefWidth="633.0" AnchorPane.bottomAnchor="39.0" AnchorPane.leftAnchor="78.0" AnchorPane.rightAnchor="85.0" />
       <Label layoutX="303.0" layoutY="445.0" style="-fx-font-family: dubai; -fx-font-size: 1.5em;" text="Files Found: " textAlignment="CENTER" />
       <Label fx:id="filesFound" layoutX="422.0" layoutY="439.0" style="-fx-font-family: dubai; -fx-font-size: 2em; -fx-text-fill: Red;" text="12" />
